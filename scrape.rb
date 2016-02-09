@@ -19,7 +19,7 @@ last_offset = html.at('.nav-next').get_attribute('href').match(/offset=(\d+)&/)[
 total_pages = last_offset.to_i/20 + 1
 puts "Expecting #{total_pages} pages of users"
 
-File.open(filename, 'w') do |f|  
+File.open(filename, 'w') do |f|
   (0..last_offset.to_i).step(20) do |offset|
     url = base_url + "/?offset=#{offset}"
     html = agent.get(url)
@@ -27,12 +27,14 @@ File.open(filename, 'w') do |f|
     puts "Scraping page #{offset/20+1} of #{total_pages}"
 
     mems.each do |mem_url|
-      print '.'
+      puts "checking #{mem_url} for twitter link"
       html = agent.get mem_url
-      twitter = agent.page.at('.badge-twitter-24')
+      twitter = agent.page.at('[href^="http://twitter.com"]')
+      pp twitter
       begin
         f.puts twitter.get_attribute('href').strip.match(/\.com\/(?:#!\/)?([^\/]+)\/?$/)[1] if twitter
       rescue
+        puts 'k, we have an error'
       end
     end
     print "\n"
