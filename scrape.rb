@@ -1,12 +1,13 @@
 require 'mechanize'
 
-unless ARGV.length == 2
-  puts "Wrong number of arguments. Recieved #{ARGV.length}, but expected 2: \n'http://meetup.com/{group-name}/members' and 'ouput-file.txt'"
+unless ARGV.length >= 2
+  puts "Wrong number of arguments. Recieved #{ARGV.length}, but expected 2 or 3: \n'http://meetup.com/{group-name}/members' and 'ouput-file.txt', optionally '--silent' to suppress console output"
   exit
 end
 
 base_url = ARGV[0].strip.match(/(.*\/members)/)[1]
 filename = ARGV[1]
+silent = (ARGV[2] == '--silent')
 group_name = base_url.match(/.com\/(.+)\/members/)[1]
 
 agent = Mechanize.new
@@ -24,20 +25,19 @@ File.open(filename, 'w') do |f|
     url = base_url + "/?offset=#{offset}"
     html = agent.get(url)
     mems = html.search('.memName').map { |e| e.get_attribute('href') }
-    puts "Scraping page #{offset/20+1} of #{total_pages}"
+    puts "Scraping page #{offset/20+1} of #{total_pages}" unless silent
 
     mems.each do |mem_url|
-      puts "checking #{mem_url} for twitter link"
+      print '.' unless silent
       html = agent.get mem_url
       twitter = agent.page.at('[href^="http://twitter.com"]')
-      pp twitter
       begin
         f.puts twitter.get_attribute('href').strip.match(/\.com\/(?:#!\/)?([^\/]+)\/?$/)[1] if twitter
       rescue
         puts 'k, we have an error'
       end
     end
-    print "\n"
+    print "\n" unless silent
   end
 end
 
